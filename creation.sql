@@ -1,0 +1,19 @@
+CREATE TABLE Queue (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(256),
+	`capacity` INT,
+	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`deleted_at` DATETIME,
+	PRIMARY KEY (id)
+);
+
+CREATE TABLE Node (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(256),
+	`queue_id` INT NOT NULL,
+	`serviced_at` DATETIME,
+	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`deleted_at` DATETIME,
+	PRIMARY KEY (id),
+	FOREIGN KEY (queue_id) REFERENCES Queue(id) ON DELETE CASCADE
+);

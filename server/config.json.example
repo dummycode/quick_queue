@@ -1,0 +1,12 @@
+{
+    "version" : "0.0.1",
+    "app_name" : "Quick Queue",
+    "app_desc" : "Queueing system",
+    "database" : {
+        "host" : "127.0.0.1",
+        "user" : "root",
+        "password" : "pass",
+        "database" : "database_name",
+        "port" : 3306
+    }
+}
