@@ -1,13 +1,20 @@
+const { body, param } = require('express-validator/check')
+
 var Responder = require('../core/responder');
 var responder = new Responder();
-
-var Validator = require('../core/validator');
-var validator = new Validator();
 
 var Database = require('../core/database');
 var connection = new Database();
 
-module.exports = class Controller {
+var { 
+    ValidationFailedError, 
+    NodeNotFoundError, 
+    NodePreviouslyServiced, 
+    QueueNotFoundError,
+    QueueAtCapacityError,
+} = require('../core/errors');
+
+exports.Controller = class Controller {
 
     /**
      * Get all nodes
@@ -17,7 +24,9 @@ module.exports = class Controller {
      */
     getAll(req, res) {
         // logic to get all nodes
-        connection.query('SELECT * FROM Node WHERE deleted_at IS NULL').then(results => {
+        connection.query(
+            'SELECT * FROM Node WHERE deleted_at IS NULL'
+        ).then(results => {
             responder.successResponse(res, results);
         }).catch(err => {
             console.log(err);
@@ -34,23 +43,35 @@ module.exports = class Controller {
      */
     getOne(req, res) {
         // logic to get one node
-        
-        // TODO validate param
-
-        connection.query(
-            'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
-            [req.params.nodeId]
-        ).then(results => {
-            var node = results[0];
-            if (node) {
-                responder.successResponse(res, node);
-            } else {
-                responder.notFoundResponse(res, 'node not found');
+        req.getValidationResult().then(result => {
+            // validate params
+            if (!result.isEmpty()) {
+                throw new ValidationFailedError();
             }
+        }).then(_ => {
+            return connection.query(
+                'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
+                [req.params.nodeId]
+            );
+        }).then(results => {
+            var node = results[0];
+            if (!node) {
+                throw new NodeNotFoundError();
+            }
+            responder.successResponse(res, node);
         }).catch(err => {
-            console.log(err);
-            responder.ohShitResponse(res, 'error with query');
-        })
+            switch (err.constructor) {
+                case ValidationFailedError:
+                    responder.badRequestResponse(res, 'invalid parameters');
+                    return;
+                case NodeNotFoundError:
+                    responder.notFoundResponse(res, 'node not found');
+                    return;
+                default:
+                    console.log(err);
+                    responder.ohShitResponse(res, 'unknown error occurred');
+            }
+        });
     }
 
     /**
@@ -59,61 +80,66 @@ module.exports = class Controller {
      * @param {Request} req 
      * @param {Response} res 
      */
-    post(req, res) {
-        console.log('new node');
+    createNode(req, res) {
+        const attributes = [req.body.name, req.body.queue_id];
 
-        let attributes = [req.body.name, req.body.queue_id];
+        var queue;
 
-        if (!validator.validate(attributes, {})) { // TODO validate params
-            // QUIT
-            responder.badRequestResponse(res);
-            return;
-        }
-
-        var queue, node_inserted, node_selected;
-
-        connection.query(
-            'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
-            [req.body.queue_id]
-        ).then(results => {
+        req.getValidationResult().then(result => {
+            // validate params
+            if (!result.isEmpty()) {
+                throw new ValidationFailedError();
+            }
+        }).then(_ => {
+            // get queue
+            return connection.query(
+                'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
+                [req.body.queue_id]
+            );
+        }).then(results => {
             queue = results[0];
-            if (queue) {
-                return connection.query(
-                    'SELECT * FROM Queue LEFT JOIN Node ON Queue.id = Node.queue_id WHERE Node.serviced_at IS NULL AND Node.deleted_at IS NULL AND Queue.id = ?',
-                    [req.body.queue_id]
-                );
-            } else {
-                responder.badRequestResponse(res, 'queue not found');
+            if (!queue) {
+                throw new QueueNotFoundError();
             }
+            // get all nodes active on queue
+            return connection.query(
+                'SELECT * FROM Queue LEFT JOIN Node ON Queue.id = Node.queue_id WHERE Node.serviced_at IS NULL AND Node.deleted_at IS NULL AND Queue.id = ?',
+                [req.body.queue_id]
+            );
         }).then(results => {
-            if (queue) {
-                console.log(queue.capacity, results.length);
-                if (!queue.capacity || results.length < queue.capacity) {
-                    node_inserted = true;
-                    return connection.query(
-                        'INSERT INTO Node(name, queue_id) VALUES (?, ?)',
-                        attributes
-                    );
-                } else {
-                    responder.badRequestResponse(res, 'queue is at capacity');
-                }
+            if (queue.capacity && results.length >= queue.capacity) {
+                throw new QueueAtCapacityError();
             }
+            // create the node
+            return connection.query(
+                'INSERT INTO Node(name, queue_id) VALUES (?, ?)',
+                attributes
+            );
         }).then(results => {
-            console.log(results);
-            if (node_inserted) {
-                node_selected = true;
-                return connection.query(
-                    'SELECT * FROM Node WHERE id = ?',
-                    [results.insertId]
-                );
-            }
+            // get inserted node
+            return connection.query(
+                'SELECT * FROM Node WHERE id = ?',
+                [results.insertId]
+            );
         }).then(results => {
-            if (node_selected) {
-                responder.itemCreatedResponse(res, results[0], 'node created');
-            }
+            // success!
+            responder.itemCreatedResponse(res, results[0], 'node created');
         }).catch(err => {
-            console.log(err);
-            responder.ohShitResponse(res, 'error with query');
+            switch (err.constructor) {
+                case ValidationFailedError:
+                    responder.badRequestResponse(res, 'invalid parameters');
+                    return;
+                case QueueNotFoundError:
+                    responder.notFoundResponse(res, 'queue not found');
+                    return;
+                case QueueAtCapacityError:
+                    responder.badRequestResponse(res, 'queue at capacity');
+                    return;
+                default:
+                    console.log(err);
+                    responder.ohShitResponse(res, 'unknown error occurred');
+                    return;
+            }
         });
     }
 
@@ -123,34 +149,44 @@ module.exports = class Controller {
      * @param {Request} req 
      * @param {Response} res 
      */
-    delete(req, res) {
-        console.log('delete node ', req.params);
-
-        // TODO validate param
-
-        var node;
-        // check node exists and is not deleted
-        connection.query(
-            'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
-            [req.params.nodeId]
-        ).then(results => {
-            node = results[0];
-            if (node) {
-                return connection.query(
-                    'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?',
-                    [req.params.nodeId]
-                );
-            } else {
-                responder.notFoundResponse(res, 'node not found');
+    deleteNode(req, res) {
+        req.getValidationResult().then(result => {
+            // validate params
+            if (!result.isEmpty()) {
+                throw new ValidationFailedError();
             }
         }).then(_ => {
-            if (node) {
-                responder.itemDeletedResponse(res);
+            return connection.query(
+                'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
+                [req.params.nodeId]
+            )
+        }).then(results => {
+            // check node exists and is not deleted
+            var node = results[0];
+            if (!node) {
+                throw new NodeNotFoundError();
             }
+            // delete the node
+            return connection.query(
+                'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [req.params.nodeId]
+            );
+        }).then(_ => {
+            // success!
+            responder.itemDeletedResponse(res);
         }).catch(err => {
-            // TODO error logging
-            console.log(err);
-            responder.ohShitResponse(res, 'error with query');
+            switch (err.constructor) {
+                case NodeNotFoundError:
+                    responder.notFoundResponse(res, 'node not found');
+                    return;
+                case ValidationFailedError:
+                    responder.badRequestResponse(res, 'invalid parameters');
+                    return;
+                default:
+                    console.log(err); // TODO better error logging here
+                    responder.ohShitResponse(res, 'unknown error occurred');
+                    return;
+            }
         });
     }
 
@@ -161,47 +197,55 @@ module.exports = class Controller {
      * @param {Response} res 
      */
     service(req, res) {
-        // TODO validate param
-
-        var node, node_serviced;
-
-        // check node exists and is not deleted
-        connection.query(
-            'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
-            [req.params.nodeId]
-        ).then(results => {
-            node = results[0];
-            if (node) {
-                // if node is serviced, return bad response
-                if (node.serviced_at) {
-                    responder.badRequestResponse(res, 'node already serviced');
-                } else {
-                    node_serviced = true
-                    // service the node
-                    return connection.query(
-                        'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP WHERE id = ?',
-                        [req.params.nodeId]
-                    );
-                }
-            } else {
-                responder.notFoundResponse(res, 'node not found');
+        req.getValidationResult().then(result => {
+            // validate params
+            if (!result.isEmpty()) {
+                throw new ValidationFailedError();
             }
+        }).then(_ => {
+            return connection.query(
+                'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
+                [req.params.nodeId]
+            )
         }).then(results => {
-            if (node_serviced) {
-                // get node for item updated response
-                return connection.query(
-                    'SELECT * FROM Node WHERE id = ?',
-                    [results.insertId]
-                );
+            // check node exists and is not deleted
+            var node = results[0];
+            if (!node) {
+                throw new NodeNotFoundError();
+            } else if (node.serviced_at) {
+                throw new NodePreviouslyServiced();
             }
+            // delete the node
+            return connection.query(
+                'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [req.params.nodeId]
+            );
         }).then(results => {
-            if (node_serviced) {
-                responder.itemUpdatedResponse(res, results[0], 'node serviced');
-            }
+            console.log(results);
+            return connection.query(
+                'SELECT * FROM Node WHERE id = ?',
+                [req.params.nodeId]
+            );
+        }).then(results => {
+            console.log(results);
+            // success!
+            responder.itemUpdatedResponse(res, results[0], 'node serviced');
         }).catch(err => {
-            // TODO error logging
-            console.log(err);
-            responder.ohShitResponse(res, 'error with query');
+            switch (err.constructor) {
+                case NodeNotFoundError:
+                    responder.notFoundResponse(res, 'node not found');
+                    return;
+                case NodePreviouslyServiced:
+                    responder.badRequestResponse(res, 'node previously serviced');
+                    return;
+                case ValidationFailedError:
+                    responder.badRequestResponse(res, 'invalid parameters');
+                    return;
+                default:
+                    console.log(err); // TODO better error logging here
+                    responder.ohShitResponse(res, 'unknown error occurred');
+                    return;
+            }
         });
     }
 };

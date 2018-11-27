@@ -68,8 +68,8 @@ module.exports = class Responder {
      * @param {Response} res 
      * @param {string} message 
      */
-    ohShitResponse(res, message = 'oh shit') {
-        this.baseErrorResponse(res, 500, message);
+    ohShitResponse(res, message = 'oh shit', errors = []) {
+        this.baseErrorResponse(res, 500, message, errors);
     }
 
     /**
