@@ -1,10 +1,11 @@
-var connection = require('../core/database');
-
 var Responder = require('../core/responder');
 var responder = new Responder();
 
 var Validator = require('../core/validator');
 var validator = new Validator();
+
+var Database = require('../core/database');
+var connection = new Database();
 
 module.exports = class Controller {
 
@@ -16,14 +17,13 @@ module.exports = class Controller {
      */
     getAll(req, res) {
         // logic to get all nodes
-        connection.query('SELECT * FROM Node WHERE deleted_at IS NULL', function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                responder.ohShitResponse(res, 'error with query');
-            } else {
-                responder.successResponse(res, results);
-            }
+        connection.query('SELECT * FROM Node WHERE deleted_at IS NULL').then(results => {
+            responder.successResponse(res, results);
+        }).catch(err => {
+            console.log(err);
+            responder.ohShitResponse(res, 'error with query');
         });
+
     }
 
     /**
@@ -37,24 +37,20 @@ module.exports = class Controller {
         
         // TODO validate param
 
-        connection.query({
-            sql : 'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL', 
-            values : [req.params.nodeId],
-        }, function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
+        connection.query(
+            'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
+            [req.params.nodeId]
+        ).then(results => {
+            var node = results[0];
+            if (node) {
+                responder.successResponse(res, node);
             } else {
-                // no error, proceed with results, or lack thereof
-                console.log(results);
-                if (results[0]) { // TODO fix check for exists
-                    responder.successResponse(res, results[0]); // TODO change response format
-                } else {
-                    responder.notFoundResponse(res, 'node not found');
-                }
+                responder.notFoundResponse(res, 'node not found');
             }
-        });
+        }).catch(err => {
+            console.log(err);
+            responder.ohShitResponse(res, 'error with query');
+        })
     }
 
     /**
@@ -74,63 +70,50 @@ module.exports = class Controller {
             return;
         }
 
-        // TODO refactor this oogly ish (promises)
-        connection.query({
-            sql : "SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL",
-            values : [req.body.queue_id],
-        }, function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
+        var queue, node_inserted, node_selected;
+
+        connection.query(
+            'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
+            [req.body.queue_id]
+        ).then(results => {
+            queue = results[0];
+            if (queue) {
+                return connection.query(
+                    'SELECT * FROM Queue LEFT JOIN Node ON Queue.id = Node.queue_id WHERE Node.serviced_at IS NULL AND Node.deleted_at IS NULL AND Queue.id = ?',
+                    [req.body.queue_id]
+                );
             } else {
-                // queue does not exist
-                var queue = results[0];
-                if (!queue) {
-                    responder.badRequestResponse(res, "queue not found");
-                } else { 
-                    // check capacity
-                    connection.query({
-                        sql : 'SELECT * FROM Queue LEFT JOIN Node ON Queue.id = Node.queue_id WHERE Node.serviced_at IS NULL AND Node.deleted_at IS NULL AND Queue.id = ?',
-                        values : [queue.id],
-                    }, function (err, results, fields) {
-                        if (err) {
-                            // TODO error logging
-                            console.log(err);
-                            responder.ohShitResponse(res, 'error with query');
-                        } else {
-                            // check capacity
-                            if (queue.capacity && results.length >= queue.capacity) {
-                                responder.badRequestResponse(res, "queue is at capacity");
-                            } else {
-                                // all checks complete, send it
-                                connection.query({
-                                    sql : 'INSERT INTO Node(name, queue_id) VALUES (?, ?)', 
-                                    values : attributes,
-                                }, function (err, results, fields) {
-                                    if (err) {
-                                        // TODO error logging
-                                        console.log(err);
-                                        responder.ohShitResponse(res, 'error with query');
-                                    } else {
-                                        // no error, node created
-                                        connection.query({
-                                            sql : 'SELECT * FROM Node WHERE id = ?',
-                                            values : [results.insertId],
-                                        }, function (err, results, fields) {
-                                            if (err) {
-                                                responder.ohShitResponse(res, "node created, but failed to get data");
-                                            } else {
-                                                responder.itemCreatedResponse(res, results[0], 'node created');
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        }
-                    });
+                responder.badRequestResponse(res, 'queue not found');
+            }
+        }).then(results => {
+            if (queue) {
+                console.log(queue.capacity, results.length);
+                if (!queue.capacity || results.length < queue.capacity) {
+                    node_inserted = true;
+                    return connection.query(
+                        'INSERT INTO Node(name, queue_id) VALUES (?, ?)',
+                        attributes
+                    );
+                } else {
+                    responder.badRequestResponse(res, 'queue is at capacity');
                 }
             }
+        }).then(results => {
+            console.log(results);
+            if (node_inserted) {
+                node_selected = true;
+                return connection.query(
+                    'SELECT * FROM Node WHERE id = ?',
+                    [results.insertId]
+                );
+            }
+        }).then(results => {
+            if (node_selected) {
+                responder.itemCreatedResponse(res, results[0], 'node created');
+            }
+        }).catch(err => {
+            console.log(err);
+            responder.ohShitResponse(res, 'error with query');
         });
     }
 
@@ -145,79 +128,80 @@ module.exports = class Controller {
 
         // TODO validate param
 
+        var node;
         // check node exists and is not deleted
-        connection.query({
-            sql : "SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL",
-            values : [req.params.nodeId],
-        }, function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
+        connection.query(
+            'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
+            [req.params.nodeId]
+        ).then(results => {
+            node = results[0];
+            if (node) {
+                return connection.query(
+                    'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    [req.params.nodeId]
+                );
             } else {
-                // node does not exist, cannnot delete it
-                if (!results[0]) {
-                    responder.notFoundResponse(res, "node not found");
-                } else {
-                    // passed checks, delete it
-                    connection.query({
-                        sql : 'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?', 
-                        values : [req.params.nodeId],
-                    }, function (err, results, fields) {
-                        if (err) {
-                            // TODO error logging
-                            console.log(err);
-                            responder.ohShitResponse(res, 'error with query');
-                        } else {
-                            // no error, return success
-                            responder.itemDeletedResponse(res);
-                        }
-                    });
-                }
+                responder.notFoundResponse(res, 'node not found');
             }
+        }).then(_ => {
+            if (node) {
+                responder.itemDeletedResponse(res);
+            }
+        }).catch(err => {
+            // TODO error logging
+            console.log(err);
+            responder.ohShitResponse(res, 'error with query');
         });
     }
 
     /**
+     * Service a node if it is not already serviced or deleted
+     * 
      * @param {Request} req 
      * @param {Response} res 
      */
     service(req, res) {
         // TODO validate param
 
+        var node, node_serviced;
+
         // check node exists and is not deleted
-        connection.query({
-            sql : "SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL",
-            values : [req.params.nodeId],
-        }, function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
-            } else {
-                // node does not exist, cannnot delete it
-                var node = results[0];
-                if (!node) {
-                    responder.notFoundResponse(res, "node not found");
-                } else if (node.serviced_at) {
-                    responder.badRequestResponse(res, "node alread serviced");
+        connection.query(
+            'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
+            [req.params.nodeId]
+        ).then(results => {
+            node = results[0];
+            if (node) {
+                // if node is serviced, return bad response
+                if (node.serviced_at) {
+                    responder.badRequestResponse(res, 'node already serviced');
                 } else {
-                    // passed checks, delete it
-                    connection.query({
-                        sql : 'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP WHERE id = ?', 
-                        values : [req.params.nodeId],
-                    }, function (err, results, fields) {
-                        if (err) {
-                            // TODO error logging
-                            console.log(err);
-                            responder.ohShitResponse(res, 'error with query');
-                        } else {
-                            // no error, return success
-                            responder.itemUpdatedResponse(res, {}, 'node serviced'); // TODO return data
-                        }
-                    });
+                    node_serviced = true
+                    // service the node
+                    return connection.query(
+                        'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP WHERE id = ?',
+                        [req.params.nodeId]
+                    );
                 }
+            } else {
+                responder.notFoundResponse(res, 'node not found');
             }
+        }).then(results => {
+            if (node_serviced) {
+                // get node for item updated response
+                return connection.query(
+                    'SELECT * FROM Node WHERE id = ?',
+                    [results.insertId]
+                );
+            }
+        }).then(results => {
+            if (node_serviced) {
+                responder.itemUpdatedResponse(res, results[0], 'node serviced');
+            }
+        }).catch(err => {
+            // TODO error logging
+            console.log(err);
+            responder.ohShitResponse(res, 'error with query');
         });
     }
 };

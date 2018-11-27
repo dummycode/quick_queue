@@ -1,17 +1,28 @@
 var mysql = require('mysql');
 var config = require('./config');
 
-let connection = function() {
-    var database = config.get("database");
+class Database {
+    constructor() {
+        this.connection = mysql.createConnection({
+            ...config.get("database"),
+        }, function (err) {
+            if (err) {
+                console.log("database is not operating lol");
+                return;
+            }
+        });
+    }
 
-    return mysql.createConnection({
-        ...database
-    }, function (err) {
-        if (err) {
-            console.log("database is not operating lol");
-            return;
-        }
-    });
-};
+    query(sql, args) {
+        return new Promise((resolve, reject) => {
+            this.connection.query(sql, args, (err, results) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(results);
+            });
+        });
+    }
+}
 
-module.exports = connection();
+module.exports = Database;

@@ -1,4 +1,3 @@
-var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
@@ -15,11 +14,6 @@ var apiRoutes = {
 var Responder = require('./core/responder');
 var responder = new Responder();
 
-var connection = require('./core/database');
-var config = require('./core/config');
-
-// console.log(config.get("database.host"));
-
 var app = express();
 
 // view engine setup
@@ -35,7 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 
 // api routes
-// TODO: fancy key value thing
+// TODO: fancy key value thing to clean this up
 app.use('/api/', apiRoutes['indexRouter']);
 app.use('/api/queues', apiRoutes['queuesRouter']);
 app.use('/api/nodes', apiRoutes['nodesRouter']);

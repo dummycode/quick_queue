@@ -1,4 +1,4 @@
-var connection = require('../core/database');
+var util = require('util');
 
 var Responder = require('../core/responder');
 var responder = new Responder();
@@ -6,6 +6,8 @@ var responder = new Responder();
 var Validator = require('../core/validator');
 var validator = new Validator();
 
+var Database = require('../core/database');
+var connection = new Database();
 
 module.exports = class Controller {
 
@@ -17,14 +19,11 @@ module.exports = class Controller {
      */
     getAll(req, res) {
         // logic to get all queues
-        connection.query('SELECT * FROM Queue WHERE deleted_at IS NULL', function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
-            } else {
-                responder.successResponse(res, results);
-            }
+        connection.query('SELECT * FROM Queue WHERE deleted_at IS NULL').then(results => {
+            responder.successResponse(res, results);
+        }).catch(err => {
+            console.log(err);
+            responder.ohShitResponse(res, 'error with query');
         });
     }
 
@@ -39,23 +38,28 @@ module.exports = class Controller {
 
         // TODO validate param
 
-        connection.query({
-            sql : 'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL', 
-            values : [req.params.queueId],
-        }, function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
+        var queue;
+
+        connection.query(
+            'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL', [req.params.queueId]
+        ).then(results => {
+            queue = results[0];
+            if (queue) {
+                return connection.query(
+                    'SELECT * FROM Node WHERE queue_id = ? AND serviced_at IS NULL AND deleted_at IS NULL',
+                    [req.params.queueId]
+                );
             } else {
-                // no error, proceed with results, or lack thereof
-                console.log(results);
-                if (results[0]) { // TODO fix check for exists
-                    responder.successResponse(res, results[0]); // TODO change response format
-                } else {
-                    responder.notFoundResponse(res, 'queue not found');
-                }
+                responder.notFoundResponse(res, "queue not found");
             }
+        }).then(results => {
+            queue.nodes = results;
+            if (queue) {
+                responder.successResponse(res, queue); // TODO change response format
+            }
+        }).catch(err => {
+            console.log(err); // TODO error logging
+            responder.ohShitResponse(res, 'error with query');
         });
     }
 
@@ -66,8 +70,6 @@ module.exports = class Controller {
      * @param {Response} res 
      */
     post(req, res) {
-        console.log('new queue');
-
         let attributes = [req.body.name, req.body.capacity];
 
         if (!validator.validate(attributes, {})) { // TODO validate params
@@ -76,28 +78,17 @@ module.exports = class Controller {
             return;
         }
 
-        connection.query({
-            sql : 'INSERT INTO Queue(name, capacity) VALUES (?, ?)', 
-            values : attributes,
-        }, function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
-            } else {
-                // no error, queue created
-                connection.query({
-                    sql : 'SELECT * FROM Queue WHERE id = ?',
-                    values : [results.insertId],
-                }, function (err, results, fields) {
-                    if (err) {
-                        responder.ohShitResponse(res, "queue created, but failed to get data");
-                    } else {
-                        responder.itemCreatedResponse(res, results[0], 'queue created');
-                    }
-                });
-            }
-        });
+        connection.query(
+            'INSERT INTO Queue(name, capacity) VALUES (?, ?)',
+            attributes
+        ).then(results => {
+            return connection.query('SELECT * FROM Queue WHERE id = ?', [results.insertId])
+        }).then(results => {
+            responder.itemCreatedResponse(res, results[0], 'queue created');
+        }).catch(err => {
+            console.log(err); // TODO error logging
+            responder.ohShitResponse(res, 'error with query');
+        })
     }
 
     /**
@@ -106,39 +97,34 @@ module.exports = class Controller {
      * @param {Request} req 
      * @param {Response} res 
      */
-    delete(req, res) {
+    async delete(req, res) {
         // TODO validate param
 
         // check queue exists and is not deleted
-        connection.query({
-            sql : "SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL",
-            values : [req.params.queueId],
-        }, function (err, results, fields) {
-            if (err) {
-                // TODO error logging
-                console.log(err);
-                responder.ohShitResponse(res, 'error with query');
+        var queue;
+
+        connection.query(
+            'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
+            [req.params.queueId]
+        ).then(results => {
+            queue = results[0];
+            // if queue exists, delete it
+            if (queue) {
+                return connection.query(
+                    'UPDATE Queue SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    [req.params.queueId]
+                );
             } else {
-                // queue does not exist, cannnot delete it
-                if (!results[0]) {
-                    responder.notFoundResponse(res, "queue not found");
-                } else {
-                    // passed checks, delete it
-                    connection.query({
-                        sql : 'UPDATE Queue SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?', 
-                        values : [req.params.queueId],
-                    }, function (err, results, fields) {
-                        if (err) {
-                            // TODO error logging
-                            console.log(err);
-                            responder.ohShitResponse(res, 'error with query');
-                        } else {
-                            // no error, return success
-                            responder.itemDeletedResponse(res);
-                        }
-                    });
-                }
+                responder.notFoundResponse(res, 'queue not found');
             }
+        }).then(results => {
+            if (queue) {
+                responder.itemDeletedResponse(res);
+            }
+        }).catch(err => {
+            // TODO error logging
+            console.log(err);
+            responder.ohShitResponse(res, 'error with query');
         });
     }
 };
