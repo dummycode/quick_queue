@@ -135,7 +135,7 @@ exports.Controller = class Controller {
             }
         }).then(_ => {
             return connection.query(
-                'INSERT INTO queue(name, capacity) VALUES (?, ?)',
+                'INSERT INTO queue(name, capacity, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(3))',
                 attributes
             );
         }).then(results => {
@@ -247,11 +247,11 @@ exports.Controller = class Controller {
             // check queue exists and is not deleted
             var queue = results[0];
             if (!queue) {
-                throw new QueueNotFoundException();
+                throw new QueueNotFoundError();
             }
             // delete the queue
             return connection.query(
-                'UPDATE Queue SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?',
+                'UPDATE Queue SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
                 [req.params.queueId]
             );
         }).then(_ => {

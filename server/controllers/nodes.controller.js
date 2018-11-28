@@ -112,7 +112,7 @@ exports.Controller = class Controller {
             }
             // create the node
             return connection.query(
-                'INSERT INTO Node(name, queue_id) VALUES (?, ?)',
+                'INSERT INTO Node(name, queue_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(3))',
                 attributes
             );
         }).then(results => {
@@ -168,7 +168,7 @@ exports.Controller = class Controller {
             }
             // delete the node
             return connection.query(
-                'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?',
+                'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
                 [req.params.nodeId]
             );
         }).then(_ => {
@@ -217,7 +217,7 @@ exports.Controller = class Controller {
             }
             // delete the node
             return connection.query(
-                'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP WHERE id = ?',
+                'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
                 [req.params.nodeId]
             );
         }).then(results => {
