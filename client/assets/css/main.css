@@ -20,7 +20,6 @@
 }
 
 ul li {
-    cursor: pointer;
     position: relative;
     padding: 12px 8px 12px 8px;
     list-style-type: none;
@@ -43,6 +42,7 @@ ul li {
 }
 
 .close-button:hover {
+    cursor: pointer;
     background-color: white;
     color: black;
 }
@@ -55,6 +55,7 @@ ul li {
 }
 
 .service-button:hover {
+    cursor: pointer;
     background-color: white;
     color: black;
 }
