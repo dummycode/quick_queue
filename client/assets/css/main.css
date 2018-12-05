@@ -1,0 +1,60 @@
+.header {
+    background-color: #236AB9;
+    padding: 5px 40px;
+    color: #FDDC22;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.header h1 {
+    font-size: 64px;
+}
+
+.selection {
+    text-align: center;
+}
+
+.queue-list {
+    margin: 0;
+    padding: 0;
+}
+
+ul li {
+    cursor: pointer;
+    position: relative;
+    padding: 12px 8px 12px 8px;
+    list-style-type: none;
+    background: green;
+    font-size: 18px;
+    transition: 0.2s;
+
+    /* List items unselectable */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.close-button {
+    position: absolute;
+    right: 0;
+    top: 0;
+    padding: 12px 16px 12px 16px;
+}
+
+.close-button:hover {
+    background-color: white;
+    color: black;
+}
+
+.service-button {
+    position: absolute;
+    right: 43.25px;
+    top: 0;
+    padding: 12px 16px 12px 16px;
+}
+
+.service-button:hover {
+    background-color: white;
+    color: black;
+}
