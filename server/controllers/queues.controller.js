@@ -188,7 +188,6 @@ exports.Controller = class Controller {
             );
         }).then(results => {
             node = results[0];
-            console.log(node);
             if (!node) {
                 throw new QueueEmptyError();
             }

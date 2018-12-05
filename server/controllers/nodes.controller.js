@@ -221,13 +221,11 @@ exports.Controller = class Controller {
                 [req.params.nodeId]
             );
         }).then(results => {
-            console.log(results);
             return connection.query(
                 'SELECT * FROM Node WHERE id = ?',
                 [req.params.nodeId]
             );
         }).then(results => {
-            console.log(results);
             // success!
             responder.itemUpdatedResponse(res, results[0], 'node serviced');
         }).catch(err => {
