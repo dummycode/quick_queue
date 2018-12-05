@@ -61,7 +61,7 @@ exports.Controller = class Controller {
             );
         }).then(results => {
             queue.nodes = results;
-            responder.successResponse(res, results[0]);
+            responder.successResponse(res, queue);
         }).catch(err => {
             switch (err.constructor) {
                 case ValidationFailedError:

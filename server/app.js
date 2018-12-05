@@ -2,6 +2,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var cors = require('cors');
 var expressValidator = require('express-validator');
 
 var indexRouter = require('./routes/index');
@@ -28,6 +29,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressValidator());
 
+// Add headers
+app.use(cors());
+
 app.use('/', indexRouter);
 
 // api routes
@@ -40,6 +44,7 @@ app.use('/api/nodes', apiRoutes['nodesRouter']);
 app.use(function(req, res, next) {
     responder.notFoundResponse(res);
 });
+
 
 // error handler
 app.use(function(err, req, res, next) {
