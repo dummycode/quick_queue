@@ -1,4 +1,4 @@
 # Quick Queue
 
-**About** : A queueing system for Georgia Tech's CS 2110 office hours
+**About** : A queueing system for Georgia Tech's College of Computing office hours
 
