@@ -4,6 +4,9 @@ var responder = new Responder();
 var Database = require('../core/database');
 var connection = new Database();
 
+var { Manager } = require('../managers/queues.manager');
+var manager = new Manager();
+
 var { 
     ValidationFailedError, 
     QueueNotFoundError,
@@ -127,22 +130,12 @@ exports.Controller = class Controller {
      * @param {Response} res 
      */
     createQueue(req, res) {
-        const attributes = [req.body.name, req.body.capacity];
-
         req.getValidationResult().then(result => {
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
         }).then(_ => {
-            return connection.query(
-                'INSERT INTO queue(name, capacity, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(3))',
-                attributes
-            );
-        }).then(results => {
-            return connection.query(
-                'SELECT * FROM Queue WHERE id = ?',
-                [results.insertId]
-            );
+            return manager.createQueue(req.body.name, req.body.capacity);
         }).then(results => {
             responder.itemCreatedResponse(res, results[0], 'queue created');
         }).catch(err => {
@@ -238,21 +231,7 @@ exports.Controller = class Controller {
                 throw new ValidationFailedError();
             }
         }).then(_ => {
-            return connection.query(
-                'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
-                [req.params.queueId]
-            )
-        }).then(results => {
-            // check queue exists and is not deleted
-            var queue = results[0];
-            if (!queue) {
-                throw new QueueNotFoundError();
-            }
-            // delete the queue
-            return connection.query(
-                'UPDATE Queue SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
-                [req.params.queueId]
-            );
+            return manager.deleteQueue();
         }).then(_ => {
             // success!
             responder.itemDeletedResponse(res);
