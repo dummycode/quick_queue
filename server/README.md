@@ -1,3 +1,3 @@
 # Quick Queue Server
 
-**About** : NodeJS server that handles the black magic behind Quick Queue
+**About** : NodeJS server that is the black magic behind Quick Queue
