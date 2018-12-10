@@ -5,7 +5,7 @@ body, html {
   }
 
 .bg-image {
-    background-image: url('../img/tech_tower.jpg');
+    background-image: url('../../../assets/img/tech_tower.jpg');
   
     /* blur effect */
     filter: blur(6px);
@@ -53,8 +53,9 @@ body, html {
 .selection-section {
     display: none;
 }
-.service-section {
-    display: none; 
+
+.stats-section {
+    display: none;
 }
 
 /*
@@ -64,54 +65,45 @@ body, html {
     cursor: pointer;
 }
 
-.selection {
+/*
+ * Div styles
+ */
+.top-stats {
+    height: 175px;
+}
+
+.current-count-div {
+    float: left;
+    text-align: center;
+    width: 47.5%;
+    height: 100%;
+    /* border: 1px solid #f1f1f1; */
+    padding-top: 5px;
+    margin-right: 2.5%;
+}
+
+.stats-div {
+    float: left;
+    width: 47.5%;
+    height: 100%;
+    text-align: center;
+    /* border: 1px solid #f1f1f1; */
+    padding-top: 5px;
+    margin-left: 2.5%;
+}
+
+.pop-times-div {
+    margin-top: 15px;
+    width: 100%;
+    height: auto;
     text-align: center;
 }
 
-.next {
-    text-align: center;
+.pop-times {
+    width: 75%;
+    max-width: 75%;
 }
 
-.queue-list {
-    margin: 0;
-    padding: 0;
-}
-
-ul li {
-    position: relative;
-    padding: 12px 8px 12px 8px;
-    list-style-type: none;
-    background: green;
-    font-size: 18px;
-    transition: 0.2s;
-
-    /* List items unselectable */
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-.close-button {
-    position: absolute;
-    right: 0;
-    top: 0;
-    padding: 12px 16px 12px 16px;
-}
-
-.close-button:hover {
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.service-button {
-    position: absolute;
-    right: 43.25px;
-    top: 0;
-    padding: 12px 16px 12px 16px;
-}
-
-.service-button:hover {
-    cursor: pointer;
-    font-weight: bold;
+h1.stat {
+    font-size: 96px;
 }
