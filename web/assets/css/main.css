@@ -72,17 +72,23 @@ body, html {
     text-align: center;
 }
 
-.queue-list {
+.queue-list-div {
     margin: 0;
     padding: 0;
+    display: inline-block;
+    width: 30%;
+}
+
+.queue-list {
+    text-align: left;
+    /* transform: translate(-20%, 0%); */
 }
 
 ul li {
     position: relative;
     padding: 12px 8px 12px 8px;
     list-style-type: none;
-    background: green;
-    font-size: 18px;
+    font-size: 24px;
     transition: 0.2s;
 
     /* List items unselectable */
