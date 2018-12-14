@@ -104,7 +104,7 @@ exports.Controller = class Controller {
                     responder.badRequestResponse(res, 'queue at capacity');
                     return;
                 default:
-                    console.log(err);
+                    console.log(err); 
                     responder.ohShitResponse(res, 'unknown error occurred');
                     return;
             }
