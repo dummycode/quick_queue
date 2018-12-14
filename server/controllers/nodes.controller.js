@@ -133,6 +133,9 @@ exports.Controller = class Controller {
                 case NodeNotFoundError:
                     responder.notFoundResponse(res, 'node not found');
                     return;
+                case NodePreviouslyServiced:
+                    responder.badRequestResponse(res, 'node previously serviced');
+                    return;
                 case ValidationFailedError:
                     responder.badRequestResponse(res, 'invalid parameters');
                     return;

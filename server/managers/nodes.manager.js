@@ -63,6 +63,8 @@ exports.Manager = class Manager {
             var node = results[0];
             if (!node) {
                 throw new NodeNotFoundError();
+            } else if (node.serviced_at) {
+                throw new NodePreviouslyServiced();
             }
             // delete the node
             return connection.query(
