@@ -25,7 +25,7 @@ exports.isAuthenticated = function (req, res, next) {
 }
 
 exports.isAdministrator = function (req, res, next) {
-    if (false) {
+    if (false) { // TODO fix this up
         return next();
     }
     responder.unauthorizedResponse(res);

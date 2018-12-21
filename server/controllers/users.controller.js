@@ -49,6 +49,9 @@ exports.Controller = class Controller {
                 case ValidationFailedError:
                     responder.badRequestResponse(res, 'invalid parameters');
                     return;
+                case UserNotFoundError:
+                    responder.badRequestResponse(res, 'user not found');
+                    return;
                 default:
                     console.log(err);
                     responder.ohShitResponse(res, 'unknown error occurred');
@@ -101,7 +104,7 @@ exports.Controller = class Controller {
                     responder.badRequestResponse(res, 'user not found');
                     return;
                 case EncryptionFailedError:
-                    responder.ohShitResponse(res, 'encryption failed for an unknown reason');
+                    responder.ohShitResponse(res, 'encryption failed');
                     return;
                 default:
                     console.log(err);
