@@ -24,7 +24,7 @@ exports.validate = function validate(method) {
             ]
         }
         default: {
-            return true;
+            return () => true;
         }
     }
 };

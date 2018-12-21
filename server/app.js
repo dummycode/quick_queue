@@ -11,6 +11,7 @@ var apiRoutes = {
     'indexRouter' : require('./routes/api/index'),
     'queuesRouter' : require('./routes/api/queues'),
     'nodesRouter' : require('./routes/api/nodes'),
+    'usersRouter' : require('./routes/api/users'),
 };
 
 var Responder = require('./core/responder');
@@ -39,6 +40,7 @@ app.use('/', indexRouter);
 app.use('/api/', apiRoutes['indexRouter']);
 app.use('/api/queues', apiRoutes['queuesRouter']);
 app.use('/api/nodes', apiRoutes['nodesRouter']);
+app.use('/api/users', apiRoutes['usersRouter']);
 
 // catch 404 and send not found response
 app.use(function(req, res, next) {
@@ -53,8 +55,8 @@ app.use(function(err, req, res, next) {
     res.locals.error = req.app.get('env') === 'development' ? err : {};
 
     // render the error page
-    res.status(err.status || 500);
-    res.render('error');
+    console.log(err);
+    responder.ohShitResponse(res, err.message);
 });
 
 module.exports = app;

@@ -1,12 +1,18 @@
 {
-    "version" : "0.0.1",
     "app_name" : "Quick Queue",
-    "app_desc" : "Queueing system",
+    "app_desc" : "Generic queueing system",
+    "api" : {
+        "version" : "0.0.1"
+    },
+    "auth" : {
+        "secret" : "mysecretkey",
+        "timeout" : 2592000
+    },
     "database" : {
         "host" : "127.0.0.1",
-        "user" : "root",
-        "password" : "pass",
-        "database" : "database_name",
+        "user" : "user",
+        "password" : "password",
+        "database" : "quick_queue",
         "port" : 3306
     }
 }

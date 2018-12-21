@@ -74,7 +74,7 @@ exports.Controller = class Controller {
                     responder.notFoundResponse(res, 'queue not found');
                     return;
                 default:
-                    console.log(err);
+                    console.log(err); // TODO better error logging
                     responder.ohShitResponse(res, 'unknown error occurred');
             }
         });
@@ -117,7 +117,7 @@ exports.Controller = class Controller {
                     responder.notFoundResponse(res, 'queue not found');
                     return;
                 default:
-                    console.log(err);
+                    console.log(err); // TODO better error logging
                     responder.ohShitResponse(res, 'unknown error occurred');
             }
         });
