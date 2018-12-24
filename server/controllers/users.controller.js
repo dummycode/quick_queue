@@ -35,7 +35,7 @@ exports.Controller = class Controller {
             }
         }).then(_ => {
             return connection.query(
-                'SELECT * FROM User WHERE id = ?',
+                'SELECT * FROM User WHERE id = ? AND deleted_at IS NULL',
                 [req.body.user_id]
             );
         }).then(results => {
@@ -72,29 +72,30 @@ exports.Controller = class Controller {
             }
         }).then(_ => {
             return connection.query(
-                'SELECT * FROM User WHERE username = ?',
+                'SELECT * FROM User WHERE username = ? AND deleted_at IS NULL',
                 [req.body.username]
             );
         }).then(results => {
             var user = results[0];
 
-            if (user) {
-                bcrypt.compare(req.body.password, user.password, function(err, valid) {
-                    if (err) {
-                        throw new EncryptionFailedError();
-                    }
-                    if (valid) {
-                        var token = jwt.sign({ id: user.id }, config.get('auth.secret'), {
-                            expiresIn: config.get('auth.timeout'),
-                        });
-                        responder.itemCreatedResponse(res, [user_goggles(user), token]);
-                    } else {
-                        responder.unauthorizedResponse(res, 'invalid password');
-                    }
-                });
-            } else {
+            if (!user) {
                 throw new UserNotFoundError();
             }
+            
+            bcrypt.compare(req.body.password, user.password, function(err, valid) {
+                if (err) {
+                    throw new EncryptionFailedError();
+                }
+                
+                if (valid) {
+                    var token = jwt.sign({ id: user.id }, config.get('auth.secret'), {
+                        expiresIn: config.get('auth.timeout'),
+                    });
+                    responder.itemCreatedResponse(res, [user_goggles(user), token]);
+                } else {
+                    responder.unauthorizedResponse(res, 'invalid password');
+                }
+            });
         }).catch(err => {
             switch (err.constructor) {
                 case ValidationFailedError:
