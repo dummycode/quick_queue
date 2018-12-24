@@ -22,6 +22,16 @@ exports.validate = function validate(method) {
                 param('queueId', 'queue_id must be a int').isInt(),
             ]
         }
+        case 'activateQueue': {
+            return [
+                param('queueId', 'queue_id must be a int').isInt(),
+            ]
+        }
+        case 'deactivateQueue': {
+            return [
+                param('queueId', 'queue_id must be a int').isInt(),
+            ]
+        }
         default: {
             return () => true;
         }

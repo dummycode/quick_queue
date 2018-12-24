@@ -10,6 +10,7 @@ exports.NodePreviouslyServiced = class NodePreviouslyServiced extends Error {}
 exports.QueueNotFoundError = class QueueNotFoundError extends Error {}
 exports.QueueAtCapacityError = class QueueAtCapacityError extends Error {}
 exports.QueueEmptyError = class QueueEmptyError extends Error {}
+exports.QueueNotActiveError = class QueueNotActiveError extends Error {}
 
 /**
  * User errors

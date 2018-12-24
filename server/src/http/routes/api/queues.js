@@ -25,5 +25,12 @@ router.post('/:queueId/service', validate('getOne'), controller.service);
 /* DELETE queue */
 router.delete('/:queueId', validate('deleteQueue'), controller.deleteQueue);
 
+/* POST queue */
+router.post('/:queueId/activate', validate('activateQueue'), controller.activateQueue);
+
+/* POST queue */
+router.post('/:queueId/deactivate', validate('deactivateQueue'), controller.deactivateQueue);
+
+
 module.exports = router;
 

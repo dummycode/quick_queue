@@ -7,10 +7,11 @@ var connection = new Database();
 var { Manager } = require('../../managers/queues.manager');
 var manager = new Manager();
 
-var { 
-    ValidationFailedError, 
+var {
+    ValidationFailedError,
     QueueNotFoundError,
     QueueEmptyError,
+    QueueNotActiveError,
 } = require('../../core/errors');
 
 exports.Controller = class Controller {
@@ -18,8 +19,8 @@ exports.Controller = class Controller {
     /**
      * Get all queues
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     getAll(req, res) {
         // logic to get all queues
@@ -36,8 +37,8 @@ exports.Controller = class Controller {
     /**
      * Get one queue
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     getOne(req, res) {
         // logic to get one queue
@@ -83,8 +84,8 @@ exports.Controller = class Controller {
     /**
      * Get all nodes currently active in a queue
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     getNodes(req, res) {
         req.getValidationResult().then(result => {
@@ -126,8 +127,8 @@ exports.Controller = class Controller {
     /**
      * Create a queue
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     createQueue(req, res) {
         req.getValidationResult().then(result => {
@@ -154,8 +155,8 @@ exports.Controller = class Controller {
     /**
      * Services first node in queue
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     service(req, res) {
         var node, queue;
@@ -173,6 +174,8 @@ exports.Controller = class Controller {
             queue = results[0];
             if (!queue) {
                 throw new QueueNotFoundError();
+            } else if (!queue.active) {
+                throw new QueueNotActiveError();
             }
             // get node to be serviced
             return connection.query(
@@ -209,6 +212,9 @@ exports.Controller = class Controller {
                 case QueueEmptyError:
                     responder.badRequestResponse(res, 'queue is empty');
                     return;
+                case QueueNotActiveError:
+                    responder.badRequestResponse(res, 'queue is not active');
+                    return;
                 default:
                     console.log(err); // TODO better error logging
                     responder.ohShitResponse(res, 'unknown error occurred');
@@ -220,8 +226,8 @@ exports.Controller = class Controller {
     /**
      * Delete a queue
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     deleteQueue(req, res) {
         // check queue exists and is not deleted
@@ -231,10 +237,85 @@ exports.Controller = class Controller {
                 throw new ValidationFailedError();
             }
         }).then(_ => {
-            return manager.deleteQueue();
+            return manager.deleteQueue(req.params.queueId);
         }).then(_ => {
             // success!
             responder.itemDeletedResponse(res);
+        }).catch(err => {
+            switch (err.constructor) {
+                case QueueNotFoundError:
+                    responder.notFoundResponse(res, 'queue not found');
+                    return;
+                case ValidationFailedError:
+                    responder.badRequestResponse(res, 'invalid parameters');
+                    return;
+                default:
+                    console.log(err); // TODO better error logging here
+                    responder.ohShitResponse(res, 'unknown error occurred');
+                    return;
+            }
+        });
+    }
+
+    /**
+     * Activate a queue
+     * 
+     * @param {Request} req
+     * @param {Response} res
+     */
+    activateQueue(req, res) {
+        req.getValidationResult().then(result => {
+            // validate params
+            if (!result.isEmpty()) {
+                throw new ValidationFailedError();
+            }
+        }).then(_ => {
+            return manager.activateQueue(req.params.queueId);
+        }).then(results => {
+            console.log(results);
+            var queue = results[0];
+            if (!queue) {
+                throw new Error();
+            }
+            // success!
+            responder.itemUpdatedResponse(res, queue);
+        }).catch(err => {
+            switch (err.constructor) {
+                case QueueNotFoundError:
+                    responder.notFoundResponse(res, 'queue not found');
+                    return;
+                case ValidationFailedError:
+                    responder.badRequestResponse(res, 'invalid parameters');
+                    return;
+                default:
+                    console.log(err); // TODO better error logging here
+                    responder.ohShitResponse(res, 'unknown error occurred');
+                    return;
+            }
+        });
+    }
+
+    /**
+     * Deactivate a queue
+     * 
+     * @param {Request} req
+     * @param {Response} res
+     */
+    deactivateQueue(req, res) {
+        req.getValidationResult().then(result => {
+            // validate params
+            if (!result.isEmpty()) {
+                throw new ValidationFailedError();
+            }
+        }).then(_ => {
+            return manager.deactivateQueue(req.params.queueId);
+        }).then(results => {
+            var queue = results[0];
+            if (!queue) {
+                throw new Error();
+            }
+            // success!
+            responder.itemUpdatedResponse(res, queue);
         }).catch(err => {
             switch (err.constructor) {
                 case QueueNotFoundError:

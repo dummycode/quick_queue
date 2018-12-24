@@ -2,6 +2,7 @@ CREATE TABLE Queue (
 	`id` INT NOT NULL AUTO_INCREMENT,
 	`name` VARCHAR(256),
 	`capacity` INT,
+	`active` TININT(1) NOT NULL DEFAULT 1,
 	`created_at` DATETIME(3) NOT NULL,
 	`deleted_at` DATETIME(3),
 	PRIMARY KEY (id)
@@ -20,7 +21,7 @@ CREATE TABLE Node (
 
 CREATE TABLE User (
 	`id` INT NOT NULL AUTO_INCREMENT,
-	`username` VARCHAR(256) NOT NULL,
+	`username` VARCHAR(30) NOT NULL,
 	`password` VARCHAR(256) NOT NULL,
 	`email` VARCHAR(256),
 	`created_at` DATETIME(3) NOT NULL,

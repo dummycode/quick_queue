@@ -7,12 +7,13 @@ var connection = new Database();
 var { Manager } = require('../../managers/nodes.manager');
 var manager = new Manager();
 
-var { 
-    ValidationFailedError, 
-    NodeNotFoundError, 
-    NodePreviouslyServiced, 
+var {
+    ValidationFailedError,
+    NodeNotFoundError,
+    NodePreviouslyServiced,
     QueueNotFoundError,
     QueueAtCapacityError,
+    QueueNotActiveError,
 } = require('../../core/errors');
 
 exports.Controller = class Controller {
@@ -20,8 +21,8 @@ exports.Controller = class Controller {
     /**
      * Get all nodes
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     getAll(req, res) {
         // logic to get all nodes
@@ -39,8 +40,8 @@ exports.Controller = class Controller {
     /**
      * Get a node
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     getOne(req, res) {
         // logic to get one node
@@ -78,8 +79,8 @@ exports.Controller = class Controller {
     /**
      * Create a node
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     createNode(req, res) {
         req.getValidationResult().then(result => {
@@ -103,8 +104,11 @@ exports.Controller = class Controller {
                 case QueueAtCapacityError:
                     responder.badRequestResponse(res, 'queue at capacity');
                     return;
+                case QueueNotActiveError:
+                    responder.badRequestResponse(res, 'queue not active');
+                    return;
                 default:
-                    console.log(err); 
+                    console.log(err);
                     responder.ohShitResponse(res, 'unknown error occurred');
                     return;
             }
@@ -114,8 +118,8 @@ exports.Controller = class Controller {
     /**
      * Delete a node
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     deleteNode(req, res) {
         req.getValidationResult().then(result => {
@@ -150,8 +154,8 @@ exports.Controller = class Controller {
     /**
      * Service a node if it is not already serviced or deleted
      * 
-     * @param {Request} req 
-     * @param {Response} res 
+     * @param {Request} req
+     * @param {Response} res
      */
     service(req, res) {
         req.getValidationResult().then(result => {
@@ -174,6 +178,9 @@ exports.Controller = class Controller {
                     return;
                 case ValidationFailedError:
                     responder.badRequestResponse(res, 'invalid parameters');
+                    return;
+                case QueueNotActiveError:
+                    responder.badRequestResponse(res, 'queue not active');
                     return;
                 default:
                     console.log(err); // TODO better error logging here

@@ -27,12 +27,12 @@ exports.Manager = class Manager {
     /**
      * Delete a queue if not already deleted
      * 
-     * @param {number} queue_id 
+     * @param {number} queue_id
      */
     deleteQueue(queue_id) {
         return connection.query(
             'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
-            [queueId]
+            [queue_id]
         ).then(results => {
             // check queue exists and is not deleted
             var queue = results[0];
@@ -42,8 +42,58 @@ exports.Manager = class Manager {
             // delete the queue
             return connection.query(
                 'UPDATE Queue SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
-                [queueId]
+                [queue_id]
             );
+        });
+    }
+
+    /**
+     * Activate a queue
+     * 
+     * @param {number} queue_id
+     */
+    activateQueue(queue_id) {
+        return connection.query(
+            'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
+            [queue_id]
+        ).then(results => {
+            // check queue exists and is not deleted
+            var queue = results[0];
+            if (!queue) {
+                throw new QueueNotFoundError();
+            }
+            // activate the queue
+            return connection.query(
+                'UPDATE Queue SET active = 1 WHERE id = ?',
+                [queue_id]
+            );
+        }).then(_ => {
+            return connection.query('SELECT * FROM Queue WHERE id = ?', [queue_id]);
+        });
+    }
+
+    /**
+     * Activate a queue
+     * 
+     * @param {number} queue_id
+     */
+    deactivateQueue(queue_id) {
+        return connection.query(
+            'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
+            [queue_id]
+        ).then(results => {
+            // check queue exists and is not deleted
+            var queue = results[0];
+            if (!queue) {
+                throw new QueueNotFoundError();
+            }
+            // activate the queue
+            return connection.query(
+                'UPDATE Queue SET active = 0 WHERE id = ?',
+                [queue_id]
+            );
+        }).then(_ => {
+            return connection.query('SELECT * FROM Queue WHERE id = ?', [queue_id]);
         });
     }
 };
