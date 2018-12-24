@@ -1,4 +1,4 @@
-var json = require('../config.json');
+var json = require('../../config.json');
 
 let config = {
     get : function(path) {

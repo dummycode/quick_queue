@@ -2,10 +2,10 @@
 
 var jwt = require('jsonwebtoken');
 
-var Responder = require('../../core/responder');
+var Responder = require('../../../core/responder');
 var responder = new Responder();
 
-var config = require('../../core/config');
+var config = require('../../../core/config');
 
 exports.isAuthenticated = function (req, res, next) {
     var token = req.headers['x-access-token'];

@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
 
-var config = require('../../core/config');
+var config = require('../../../core/config');
 
-var Responder = require('../../core/responder');
+var Responder = require('../../../core/responder');
 var responder = new Responder();
 
 var { Controller, validate} = require('../../controllers/users.controller');

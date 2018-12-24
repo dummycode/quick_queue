@@ -9,7 +9,7 @@ exports.validate = function validate(method) {
         }
         case 'createQueue': {
             return [
-                body('name', 'name does not exist').exists().isString(),
+                body('name', 'name does not exist').isString(),
             ]
         }
         case 'deleteQueue': {

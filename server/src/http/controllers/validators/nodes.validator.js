@@ -9,8 +9,8 @@ exports.validate = function validate(method) {
         }
         case 'createNode': {
             return [
-                body('name', 'name does not exist').exists().isString(),
-                body('queue_id', 'queue_id does not exist').exists().isInt(),
+                body('name', 'name does not exist').isString(),
+                body('queue_id', 'queue_id does not exist').isInt(),
             ]
         }
         case 'deleteNode': {

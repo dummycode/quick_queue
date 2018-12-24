@@ -1,14 +1,16 @@
 var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
-var config = require('../core/config');
+var config = require('../../core/config');
 
-var Responder = require('../core/responder');
+var { reduceValidationError } = require('../../core/helpers');
+
+var Responder = require('../../core/responder');
 var responder = new Responder();
 
-var Database = require('../core/database');
+var Database = require('../../core/database');
 var connection = new Database();
 
-var { Manager } = require('../managers/users.manager');
+var { Manager } = require('../../managers/users.manager');
 var manager = new Manager();
 
 var { 
@@ -16,7 +18,7 @@ var {
     UserNotFoundError,
     UserAlreadyExistsError,
     EncryptionFailedError,
-} = require('../core/errors');
+} = require('../../core/errors');
 
 var user_goggles = require('./goggles/user.goggles');
 
@@ -81,12 +83,12 @@ exports.Controller = class Controller {
             if (!user) {
                 throw new UserNotFoundError();
             }
-            
+
             bcrypt.compare(req.body.password, user.password, function(err, valid) {
                 if (err) {
                     throw new EncryptionFailedError();
                 }
-                
+
                 if (valid) {
                     var token = jwt.sign({ id: user.id }, config.get('auth.secret'), {
                         expiresIn: config.get('auth.timeout'),
@@ -121,7 +123,7 @@ exports.Controller = class Controller {
     register(req, res) {
         req.getValidationResult().then(result => {
             if (!result.isEmpty()) {
-                throw new ValidationFailedError();
+                throw new ValidationFailedError(result.array().map(reduceValidationError));
             }
         }).then(_ => {
             return manager.createUser(req.body.username, req.body.password);
@@ -137,7 +139,7 @@ exports.Controller = class Controller {
         }).catch(err => {
             switch (err.constructor) {
                 case ValidationFailedError:
-                    responder.badRequestResponse(res, 'invalid parameters');
+                    responder.badRequestResponse(res, 'invalid parameters', err.errors);
                     return;
                 case UserAlreadyExistsError:
                     responder.badRequestResponse(res, 'user already exists');

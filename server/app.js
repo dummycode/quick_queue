@@ -5,16 +5,16 @@ var logger = require('morgan');
 var cors = require('cors');
 var expressValidator = require('express-validator');
 
-var indexRouter = require('./routes/index');
+var indexRouter = require('./src/http/routes/index');
 
 var apiRoutes = {
-    'indexRouter' : require('./routes/api/index'),
-    'queuesRouter' : require('./routes/api/queues'),
-    'nodesRouter' : require('./routes/api/nodes'),
-    'usersRouter' : require('./routes/api/users'),
+    'indexRouter' : require('./src/http/routes/api/index'),
+    'queuesRouter' : require('./src/http/routes/api/queues'),
+    'nodesRouter' : require('./src/http/routes/api/nodes'),
+    'usersRouter' : require('./src/http/routes/api/users'),
 };
 
-var Responder = require('./core/responder');
+var Responder = require('./src/core/responder');
 var responder = new Responder();
 
 var app = express();

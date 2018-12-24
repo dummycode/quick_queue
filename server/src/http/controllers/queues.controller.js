@@ -1,17 +1,17 @@
-var Responder = require('../core/responder');
+var Responder = require('../../core/responder');
 var responder = new Responder();
 
-var Database = require('../core/database');
+var Database = require('../../core/database');
 var connection = new Database();
 
-var { Manager } = require('../managers/queues.manager');
+var { Manager } = require('../../managers/queues.manager');
 var manager = new Manager();
 
 var { 
     ValidationFailedError, 
     QueueNotFoundError,
     QueueEmptyError,
-} = require('../core/errors');
+} = require('../../core/errors');
 
 exports.Controller = class Controller {
 

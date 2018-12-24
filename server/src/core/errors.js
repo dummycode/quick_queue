@@ -20,7 +20,12 @@ exports.UserNotFoundError = class UserNotFoundError extends Error {}
 /**
  * Validation errors
  */
-exports.ValidationFailedError = class ValidationFailedError extends Error {}
+exports.ValidationFailedError = class ValidationFailedError extends Error {
+    constructor(errors = [], ...params) {
+        super(...params);
+        this.errors = errors;
+    }
+}
 
 /**
  * Encryption errors
