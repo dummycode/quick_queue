@@ -1,10 +1,10 @@
 var json = require('../../config.json');
 
 let config = {
-    get : function(path) {
+    get: function (path) {
         var jsonData = json;
-        if (typeof (path) === "undefined") {
-            throw InvalidArgumentException();
+        if (typeof (path) === 'undefined') {
+            throw Error('invalid argument');
         }
         path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indices to properties
         path = path.replace(/^\./, ''); // strip a leading dot
@@ -24,6 +24,6 @@ let config = {
         }
         return jsonData;
     }
-}
+};
 
 module.exports = config;

@@ -2,18 +2,17 @@ var mysql = require('mysql');
 var config = require('./config');
 
 class Database {
-    constructor() {
+    constructor () {
         this.connection = mysql.createConnection({
-            ...config.get("database"),
+            ...config.get('database')
         }, function (err) {
             if (err) {
-                console.log("database is not operating lol");
-                return;
+                console.log('yikes, database is not operating');
             }
         });
     }
 
-    query(sql, args) {
+    query (sql, args) {
         return new Promise((resolve, reject) => {
             this.connection.query(sql, args, (err, results) => {
                 if (err) {

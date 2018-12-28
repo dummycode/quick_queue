@@ -1,18 +1,17 @@
 var Database = require('../core/database');
 var connection = new Database();
 
-var { 
-    QueueNotFoundError,
-    QueueEmptyError,
+var {
+    QueueNotFoundError
 } = require('../core/errors');
 
 exports.Manager = class Manager {
     /**
      * Create a queue
-     * 
-     * @param {string} name 
+     *
+     * @param {string} name
      */
-    createQueue(name, capacity) {
+    createQueue (name, capacity) {
         return connection.query(
             'INSERT INTO queue(name, capacity, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(3))',
             [name, capacity]
@@ -23,16 +22,16 @@ exports.Manager = class Manager {
             );
         });
     }
-    
+
     /**
      * Delete a queue if not already deleted
-     * 
-     * @param {number} queue_id
+     *
+     * @param {number} queueId
      */
-    deleteQueue(queue_id) {
+    deleteQueue (queueId) {
         return connection.query(
             'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
-            [queue_id]
+            [queueId]
         ).then(results => {
             // check queue exists and is not deleted
             var queue = results[0];
@@ -42,20 +41,20 @@ exports.Manager = class Manager {
             // delete the queue
             return connection.query(
                 'UPDATE Queue SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
-                [queue_id]
+                [queueId]
             );
         });
     }
 
     /**
      * Activate a queue
-     * 
-     * @param {number} queue_id
+     *
+     * @param {number} queueId
      */
-    activateQueue(queue_id) {
+    activateQueue (queueId) {
         return connection.query(
             'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
-            [queue_id]
+            [queueId]
         ).then(results => {
             // check queue exists and is not deleted
             var queue = results[0];
@@ -65,22 +64,22 @@ exports.Manager = class Manager {
             // activate the queue
             return connection.query(
                 'UPDATE Queue SET active = 1 WHERE id = ?',
-                [queue_id]
+                [queueId]
             );
         }).then(_ => {
-            return connection.query('SELECT * FROM Queue WHERE id = ?', [queue_id]);
+            return connection.query('SELECT * FROM Queue WHERE id = ?', [queueId]);
         });
     }
 
     /**
      * Activate a queue
-     * 
-     * @param {number} queue_id
+     *
+     * @param {number} queueId
      */
-    deactivateQueue(queue_id) {
+    deactivateQueue (queueId) {
         return connection.query(
             'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
-            [queue_id]
+            [queueId]
         ).then(results => {
             // check queue exists and is not deleted
             var queue = results[0];
@@ -90,10 +89,37 @@ exports.Manager = class Manager {
             // activate the queue
             return connection.query(
                 'UPDATE Queue SET active = 0 WHERE id = ?',
-                [queue_id]
+                [queueId]
             );
         }).then(_ => {
-            return connection.query('SELECT * FROM Queue WHERE id = ?', [queue_id]);
+            return connection.query('SELECT * FROM Queue WHERE id = ?', [queueId]);
+        });
+    }
+
+    /**
+     * Clear a given queue
+     *
+     * @param {number} queueId
+     */
+    clearQueue (queueId) {
+        return connection.query(
+            'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
+            [queueId]
+        ).then(results => {
+            var queue = results[0];
+            if (!queue) {
+                throw new QueueNotFoundError();
+            }
+
+            return connection.query(
+                'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ? AND deleted_at IS NULL AND serviced_at IS NULL',
+                [queueId]
+            );
+        }).then(_ => {
+            return connection.query(
+                'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
+                [queueId]
+            );
         });
     }
 };

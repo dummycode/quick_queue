@@ -3,7 +3,7 @@
 var express = require('express');
 var router = express.Router();
 
-var { Controller} = require('../../controllers/nodes.controller');
+var { Controller } = require('../../controllers/nodes.controller');
 var controller = new Controller();
 var { validate } = require('../../controllers/validators/nodes.validator');
 

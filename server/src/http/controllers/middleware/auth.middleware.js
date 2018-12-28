@@ -13,7 +13,7 @@ exports.isAuthenticated = function (req, res, next) {
         return responder.unauthorizedResponse(res, 'no token provided');
     }
 
-    jwt.verify(token, config.get('auth.secret'), function(err, decoded) {
+    jwt.verify(token, config.get('auth.secret'), function (err, decoded) {
         if (err) {
             return responder.unauthorizedResponse(res, 'failed to authenticate token');
         }
@@ -22,11 +22,11 @@ exports.isAuthenticated = function (req, res, next) {
 
         return next();
     });
-}
+};
 
 exports.isAdministrator = function (req, res, next) {
-    if (false) { // TODO fix this up
+    if (!req) { // TODO fix this up
         return next();
     }
     responder.unauthorizedResponse(res);
-}
+};

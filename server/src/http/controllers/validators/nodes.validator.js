@@ -1,27 +1,27 @@
-const { body, param } = require('express-validator/check')
+const { body, param } = require('express-validator/check');
 
-exports.validate = function validate(method) {
+exports.validate = function validate (method) {
     switch (method) {
         case 'getOne': {
             return [
-                param('nodeId', 'node_id must be an int').isInt(),
-            ]
+                param('nodeId', 'node_id must be an int').isInt()
+            ];
         }
         case 'createNode': {
             return [
                 body('name', 'name does not exist').isString(),
-                body('queue_id', 'queue_id does not exist').isInt(),
-            ]
+                body('queue_id', 'queue_id does not exist').isInt()
+            ];
         }
         case 'deleteNode': {
             return [
-                param('nodeId', 'node_id must be a int').isInt(),
-            ]
+                param('nodeId', 'node_id must be a int').isInt()
+            ];
         }
         case 'service': {
             return [
-                param('nodeId', 'node_id must be a int').isInt(),
-            ]
+                param('nodeId', 'node_id must be a int').isInt()
+            ];
         }
         default: {
             return () => true;

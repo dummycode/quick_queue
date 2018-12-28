@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-module.exports = function(object, filter) {
+module.exports = function (object, filter) {
     var filtered = {};
     for (var key in object) {
         if (filter.includes(key)) {
@@ -8,4 +8,4 @@ module.exports = function(object, filter) {
         }
     }
     return filtered;
-}
+};

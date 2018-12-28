@@ -5,18 +5,18 @@ var bcrypt = require('bcryptjs');
 
 var {
     UserAlreadyExistsError,
-    EncryptionFailedError,
+    EncryptionFailedError
 } = require('../core/errors');
 
 exports.Manager = class Manager {
     /**
      * Create a user given a username and password
-     * 
+     *
      * @param {string} username
      * @param {string} password
      */
-    createUser(username, password) {
-        bcrypt.hash(password, 8, function(err, hash) {
+    createUser (username, password) {
+        bcrypt.hash(password, 8, function (err, hash) {
             if (err) {
                 throw new EncryptionFailedError();
             }

@@ -3,7 +3,7 @@
 var express = require('express');
 var router = express.Router();
 
-var { Controller, validate} = require('../../controllers/queues.controller');
+var { Controller } = require('../../controllers/queues.controller');
 var controller = new Controller();
 var { validate } = require('../../controllers/validators/queues.validator');
 
@@ -31,6 +31,7 @@ router.post('/:queueId/activate', validate('activateQueue'), controller.activate
 /* POST queue */
 router.post('/:queueId/deactivate', validate('deactivateQueue'), controller.deactivateQueue);
 
+/* POST queue */
+router.post('/:queueId/clear', validate('clear'), controller.clear);
 
 module.exports = router;
-

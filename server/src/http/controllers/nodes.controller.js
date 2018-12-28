@@ -13,18 +13,17 @@ var {
     NodePreviouslyServiced,
     QueueNotFoundError,
     QueueAtCapacityError,
-    QueueNotActiveError,
+    QueueNotActiveError
 } = require('../../core/errors');
 
 exports.Controller = class Controller {
-
     /**
      * Get all nodes
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    getAll(req, res) {
+    getAll (req, res) {
         // logic to get all nodes
         connection.query(
             'SELECT * FROM Node WHERE deleted_at IS NULL'
@@ -34,16 +33,15 @@ exports.Controller = class Controller {
             console.log(err);
             responder.ohShitResponse(res, 'error with query');
         });
-
     }
 
     /**
      * Get a node
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    getOne(req, res) {
+    getOne (req, res) {
         // logic to get one node
         req.getValidationResult().then(result => {
             // validate params
@@ -78,11 +76,11 @@ exports.Controller = class Controller {
 
     /**
      * Create a node
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    createNode(req, res) {
+    createNode (req, res) {
         req.getValidationResult().then(result => {
             // validate params
             if (!result.isEmpty()) {
@@ -110,18 +108,17 @@ exports.Controller = class Controller {
                 default:
                     console.log(err);
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }
 
     /**
      * Delete a node
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    deleteNode(req, res) {
+    deleteNode (req, res) {
         req.getValidationResult().then(result => {
             // validate params
             if (!result.isEmpty()) {
@@ -146,18 +143,17 @@ exports.Controller = class Controller {
                 default:
                     console.log(err); // TODO better error logging here
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }
 
     /**
      * Service a node if it is not already serviced or deleted
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    service(req, res) {
+    service (req, res) {
         req.getValidationResult().then(result => {
             // validate params
             if (!result.isEmpty()) {
@@ -185,7 +181,6 @@ exports.Controller = class Controller {
                 default:
                     console.log(err); // TODO better error logging here
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }

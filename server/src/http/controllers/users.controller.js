@@ -13,29 +13,28 @@ var connection = new Database();
 var { Manager } = require('../../managers/users.manager');
 var manager = new Manager();
 
-var { 
+var {
     ValidationFailedError,
     UserNotFoundError,
     UserAlreadyExistsError,
-    EncryptionFailedError,
+    EncryptionFailedError
 } = require('../../core/errors');
 
-var user_goggles = require('./goggles/user.goggles');
+var userGoggles = require('./goggles/user.goggles');
 
 exports.Controller = class Controller {
     /**
      * Get current user
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    whoami(req, res) {
+    whoami (req, res) {
         req.getValidationResult().then(result => {
             // validate params
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
             return connection.query(
                 'SELECT * FROM User WHERE id = ? AND deleted_at IS NULL',
                 [req.body.user_id]
@@ -45,7 +44,7 @@ exports.Controller = class Controller {
             if (!user) {
                 throw new UserNotFoundError();
             }
-            return responder.successResponse(res, user_goggles(user));
+            return responder.successResponse(res, userGoggles(user));
         }).catch(err => {
             switch (err.constructor) {
                 case ValidationFailedError:
@@ -63,16 +62,15 @@ exports.Controller = class Controller {
 
     /**
      * Login as a user
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    login(req, res) {
+    login (req, res) {
         req.getValidationResult().then(result => {
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
             return connection.query(
                 'SELECT * FROM User WHERE username = ? AND deleted_at IS NULL',
                 [req.body.username]
@@ -84,16 +82,16 @@ exports.Controller = class Controller {
                 throw new UserNotFoundError();
             }
 
-            bcrypt.compare(req.body.password, user.password, function(err, valid) {
+            bcrypt.compare(req.body.password, user.password, function (err, valid) {
                 if (err) {
                     throw new EncryptionFailedError();
                 }
 
                 if (valid) {
                     var token = jwt.sign({ id: user.id }, config.get('auth.secret'), {
-                        expiresIn: config.get('auth.timeout'),
+                        expiresIn: config.get('auth.timeout')
                     });
-                    responder.itemCreatedResponse(res, [user_goggles(user), token]);
+                    responder.itemCreatedResponse(res, [userGoggles(user), token]);
                 } else {
                     responder.unauthorizedResponse(res, 'invalid password');
                 }
@@ -112,7 +110,6 @@ exports.Controller = class Controller {
                 default:
                     console.log(err);
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }
@@ -120,12 +117,11 @@ exports.Controller = class Controller {
     /**
      * Register a user
      */
-    register(req, res) {
+    register (req, res) {
         req.getValidationResult().then(result => {
             if (!result.isEmpty()) {
                 throw new ValidationFailedError(result.array().map(reduceValidationError));
             }
-        }).then(_ => {
             return manager.createUser(req.body.username, req.body.password);
         }).then(results => {
             var user = results[0];
@@ -133,9 +129,9 @@ exports.Controller = class Controller {
                 throw new Error('user creation failed for some reason');
             }
             var token = jwt.sign({ id: user.id }, config.get('auth.secret'), {
-                expiresIn: config.get('auth.timeout'),
+                expiresIn: config.get('auth.timeout')
             });
-            responder.itemCreatedResponse(res, [user_goggles(user), token]);
+            responder.itemCreatedResponse(res, [userGoggles(user), token]);
         }).catch(err => {
             switch (err.constructor) {
                 case ValidationFailedError:
@@ -147,9 +143,7 @@ exports.Controller = class Controller {
                 default:
                     console.log(err);
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
-        })
+        });
     }
 };
-

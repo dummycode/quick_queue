@@ -6,22 +6,22 @@ var {
     NodePreviouslyServiced,
     QueueNotFoundError,
     QueueAtCapacityError,
-    QueueNotActiveError,
+    QueueNotActiveError
 } = require('../core/errors');
 
 exports.Manager = class Manager {
     /**
      * Create a node given a name and queue_id
-     * 
+     *
      * @param {string} name
-     * @param {number} queue_id
+     * @param {number} queueId
      */
-    createNode(name, queue_id) {
+    createNode (name, queueId) {
         var queue;
 
         return connection.query(
             'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
-            [queue_id]
+            [queueId]
         ).then(results => {
             queue = results[0];
             if (!queue) {
@@ -32,7 +32,7 @@ exports.Manager = class Manager {
             // get all nodes active on queue
             return connection.query(
                 'SELECT * FROM Queue LEFT JOIN Node ON Queue.id = Node.queue_id WHERE Node.serviced_at IS NULL AND Node.deleted_at IS NULL AND Queue.id = ?',
-                [queue_id]
+                [queueId]
             );
         }).then(results => {
             if (queue.capacity && results.length >= queue.capacity) {
@@ -41,7 +41,7 @@ exports.Manager = class Manager {
             // create the node
             return connection.query(
                 'INSERT INTO Node(name, queue_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(3))',
-                [name, queue_id]
+                [name, queueId]
             );
         }).then(results => {
             // get inserted node
@@ -54,13 +54,13 @@ exports.Manager = class Manager {
 
     /**
      * Delete a node if it is not already deleted
-     * 
-     * @param {number} node_id
+     *
+     * @param {number} nodeId
      */
-    deleteNode(node_id) {
+    deleteNode (nodeId) {
         return connection.query(
             'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
-            [node_id]
+            [nodeId]
         ).then(results => {
             // check node exists and is not deleted
             var node = results[0];
@@ -72,21 +72,21 @@ exports.Manager = class Manager {
             // delete the node
             return connection.query(
                 'UPDATE Node SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
-                [node_id]
+                [nodeId]
             );
         });
     }
 
     /**
      * Service a node if it is not already serviced or deleted
-     * 
-     * @param {number} node_id
+     *
+     * @param {number} nodeId
      */
-    serviceNode(node_id) {
+    serviceNode (nodeId) {
         var node;
         return connection.query(
             'SELECT * FROM Node WHERE id = ? AND deleted_at IS NULL',
-            [node_id]
+            [nodeId]
         ).then(results => {
             // check node exists and is not deleted
             node = results[0];
@@ -110,12 +110,12 @@ exports.Manager = class Manager {
             // service the node
             return connection.query(
                 'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
-                [node_id]
+                [nodeId]
             );
         }).then(_ => {
             return connection.query(
                 'SELECT * FROM Node WHERE id = ?',
-                [node_id]
+                [nodeId]
             );
         });
     }

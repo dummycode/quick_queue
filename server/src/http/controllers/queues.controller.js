@@ -1,34 +1,35 @@
-var Responder = require('../../core/responder');
-var responder = new Responder();
+const Responder = require('../../core/responder');
+const responder = new Responder();
 
-var Database = require('../../core/database');
-var connection = new Database();
+const Database = require('../../core/database');
+const connection = new Database();
 
-var { Manager } = require('../../managers/queues.manager');
-var manager = new Manager();
+const { Manager } = require('../../managers/queues.manager');
+const manager = new Manager();
 
-var {
+var { reduceValidationError } = require('../../core/helpers');
+
+const {
     ValidationFailedError,
     QueueNotFoundError,
     QueueEmptyError,
-    QueueNotActiveError,
+    QueueNotActiveError
 } = require('../../core/errors');
 
 exports.Controller = class Controller {
-
     /**
      * Get all queues
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    getAll(req, res) {
+    getAll (req, res) {
         // logic to get all queues
         connection.query(
             'SELECT * FROM Queue WHERE deleted_at IS NULL'
-        ).then(results => {
+        ).then((results) => {
             responder.successResponse(res, results);
-        }).catch(err => {
+        }).catch((err) => {
             console.log(err);
             responder.ohShitResponse(res, 'error with query');
         });
@@ -36,37 +37,38 @@ exports.Controller = class Controller {
 
     /**
      * Get one queue
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    getOne(req, res) {
+    getOne (req, res) {
         // logic to get one queue
-        var queue;
+        let queue;
 
-        req.getValidationResult().then(result => {
+        req.getValidationResult().then((result) => {
             // validate params
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
+        }).then(() => {
             return connection.query(
                 'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
                 [req.params.queueId]
             );
-        }).then(results => {
+        }).then((results) => {
             queue = results[0];
             if (!queue) {
                 throw new QueueNotFoundError();
             }
             return connection.query(
-                'SELECT * FROM Node WHERE queue_id = ? AND serviced_at IS NULL AND deleted_at IS NULL',
+                'SELECT * FROM Node WHERE queue_id = ? AND'
+                + ' serviced_at IS NULL AND deleted_at IS NULL',
                 [req.params.queueId]
             );
-        }).then(results => {
+        }).then((results) => {
             queue.nodes = results;
             responder.successResponse(res, queue);
-        }).catch(err => {
+        }).catch((err) => {
             switch (err.constructor) {
                 case ValidationFailedError:
                     responder.badRequestResponse(res, 'invalid parameters');
@@ -83,23 +85,23 @@ exports.Controller = class Controller {
 
     /**
      * Get all nodes currently active in a queue
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    getNodes(req, res) {
-        req.getValidationResult().then(result => {
+    getNodes (req, res) {
+        req.getValidationResult().then((result) => {
             // validate params
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
+        }).then(() => {
             return connection.query(
                 'SELECT * FROM Queue WHERE id = ? AND deleted_at IS NULL',
                 [req.params.queueId]
             );
-        }).then(results => {
-            var queue = results[0];
+        }).then((results) => {
+            const queue = results[0];
             if (!queue) {
                 throw new QueueNotFoundError();
             }
@@ -107,9 +109,9 @@ exports.Controller = class Controller {
                 'SELECT * FROM Node WHERE queue_id = ? AND serviced_at IS NULL AND deleted_at IS NULL',
                 [req.params.queueId]
             );
-        }).then(results => {
+        }).then((results) => {
             responder.successResponse(res, results);
-        }).catch(err => {
+        }).catch((err) => {
             switch (err.constructor) {
                 case ValidationFailedError:
                     responder.badRequestResponse(res, 'invalid parameters');
@@ -126,20 +128,20 @@ exports.Controller = class Controller {
 
     /**
      * Create a queue
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    createQueue(req, res) {
-        req.getValidationResult().then(result => {
+    createQueue (req, res) {
+        req.getValidationResult().then((result) => {
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
+        }).then(() => {
             return manager.createQueue(req.body.name, req.body.capacity);
-        }).then(results => {
+        }).then((results) => {
             responder.itemCreatedResponse(res, results[0], 'queue created');
-        }).catch(err => {
+        }).catch((err) => {
             switch (err.constructor) {
                 case ValidationFailedError:
                     responder.badRequestResponse(res, 'invalid parameters');
@@ -147,30 +149,30 @@ exports.Controller = class Controller {
                 default:
                     console.log(err); // TODO better error logging
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }
 
     /**
      * Services first node in queue
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    service(req, res) {
-        var node, queue;
+    service (req, res) {
+        let node;
+        let queue;
         // validate params
-        req.getValidationResult().then(result => {
+        req.getValidationResult().then((result) => {
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
+        }).then(() => {
             return connection.query(
                 'SELECT * FROM Queue WHERE id = ?',
                 [req.params.queueId]
             );
-        }).then(results => {
+        }).then((results) => {
             queue = results[0];
             if (!queue) {
                 throw new QueueNotFoundError();
@@ -179,10 +181,13 @@ exports.Controller = class Controller {
             }
             // get node to be serviced
             return connection.query(
-                'SELECT * FROM Node n WHERE n.created_at = (SELECT min(created_at) FROM Node WHERE queue_id = ? AND serviced_at IS NULL AND deleted_at IS NULL)',
+                'SELECT * FROM Node n WHERE n.created_at =' +
+                ' (SELECT min(created_at) FROM Node WHERE' +
+                ' queue_id = ? AND serviced_at IS NULL' +
+                ' AND deleted_at IS NULL)',
                 [req.params.queueId]
             );
-        }).then(results => {
+        }).then((results) => {
             node = results[0];
             if (!node) {
                 throw new QueueEmptyError();
@@ -192,16 +197,16 @@ exports.Controller = class Controller {
                 'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP WHERE id = ?',
                 [node.id]
             );
-        }).then(_ => {
+        }).then(() => {
             // get all nodes active on queue
             return connection.query(
                 'SELECT * FROM Node WHERE queue_id = ? AND serviced_at IS NULL AND deleted_at IS NULL',
                 [req.params.queueId]
             );
-        }).then(results => {
+        }).then((results) => {
             queue.nodes = results;
             responder.itemUpdatedResponse(res, queue, 'queue serviced');
-        }).catch(err => {
+        }).catch((err) => {
             switch (err.constructor) {
                 case ValidationFailedError:
                     responder.badRequestResponse(res, 'invalid parameters');
@@ -218,30 +223,29 @@ exports.Controller = class Controller {
                 default:
                     console.log(err); // TODO better error logging
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }
 
     /**
      * Delete a queue
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    deleteQueue(req, res) {
+    deleteQueue (req, res) {
         // check queue exists and is not deleted
-        req.getValidationResult().then(result => {
+        req.getValidationResult().then((result) => {
             // validate params
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
+        }).then(() => {
             return manager.deleteQueue(req.params.queueId);
-        }).then(_ => {
+        }).then(() => {
             // success!
             responder.itemDeletedResponse(res);
-        }).catch(err => {
+        }).catch((err) => {
             switch (err.constructor) {
                 case QueueNotFoundError:
                     responder.notFoundResponse(res, 'queue not found');
@@ -252,34 +256,33 @@ exports.Controller = class Controller {
                 default:
                     console.log(err); // TODO better error logging here
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }
 
     /**
      * Activate a queue
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    activateQueue(req, res) {
-        req.getValidationResult().then(result => {
+    activateQueue (req, res) {
+        req.getValidationResult().then((result) => {
             // validate params
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
+        }).then(() => {
             return manager.activateQueue(req.params.queueId);
-        }).then(results => {
+        }).then((results) => {
             console.log(results);
-            var queue = results[0];
+            const queue = results[0];
             if (!queue) {
                 throw new Error();
             }
             // success!
             responder.itemUpdatedResponse(res, queue);
-        }).catch(err => {
+        }).catch((err) => {
             switch (err.constructor) {
                 case QueueNotFoundError:
                     responder.notFoundResponse(res, 'queue not found');
@@ -290,33 +293,31 @@ exports.Controller = class Controller {
                 default:
                     console.log(err); // TODO better error logging here
                     responder.ohShitResponse(res, 'unknown error occurred');
-                    return;
             }
         });
     }
 
     /**
      * Deactivate a queue
-     * 
+     *
      * @param {Request} req
      * @param {Response} res
      */
-    deactivateQueue(req, res) {
-        req.getValidationResult().then(result => {
+    deactivateQueue (req, res) {
+        req.getValidationResult().then((result) => {
             // validate params
             if (!result.isEmpty()) {
                 throw new ValidationFailedError();
             }
-        }).then(_ => {
             return manager.deactivateQueue(req.params.queueId);
-        }).then(results => {
-            var queue = results[0];
+        }).then((results) => {
+            const queue = results[0];
             if (!queue) {
                 throw new Error();
             }
             // success!
             responder.itemUpdatedResponse(res, queue);
-        }).catch(err => {
+        }).catch((err) => {
             switch (err.constructor) {
                 case QueueNotFoundError:
                     responder.notFoundResponse(res, 'queue not found');
@@ -327,9 +328,51 @@ exports.Controller = class Controller {
                 default:
                     console.log(err); // TODO better error logging here
                     responder.ohShitResponse(res, 'unknown error occurred');
+            }
+        });
+    }
+
+    /**
+     * Clear a queue
+     *
+     * @param {Request} req
+     * @param {Response} res
+     */
+    clear (req, res) {
+        let queue;
+        req.getValidationResult().then((result) => {
+            if (!result.isEmpty()) {
+                throw new ValidationFailedError(
+                    result.array().map(reduceValidationError)
+                );
+            }
+            return manager.clearQueue(req.params.queueId);
+        }).then((results) => {
+            queue = results[0];
+            if (!queue) {
+                throw new QueueNotFoundError();
+            }
+            return connection.query(
+                'SELECT * FROM Node WHERE queue_id = ? AND' +
+                ' serviced_at IS NULL AND deleted_at IS NULL',
+                [req.params.queueId]
+            );
+        }).then((results) => {
+            queue.nodes = results;
+            return responder.itemUpdatedResponse(res, queue, 'queue cleared');
+        }).catch((err) => {
+            switch (err.constructor) {
+                case ValidationFailedError:
+                    responder.badRequestResponse(
+                        res,
+                        'invalid parameters',
+                        err.errors
+                    );
                     return;
+                default:
+                    console.log(err);
+                    responder.ohShitResponse(res, 'unknown error occurred');
             }
         });
     }
 };
-

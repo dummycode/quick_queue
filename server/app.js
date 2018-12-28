@@ -8,10 +8,10 @@ var expressValidator = require('express-validator');
 var indexRouter = require('./src/http/routes/index');
 
 var apiRoutes = {
-    'indexRouter' : require('./src/http/routes/api/index'),
-    'queuesRouter' : require('./src/http/routes/api/queues'),
-    'nodesRouter' : require('./src/http/routes/api/nodes'),
-    'usersRouter' : require('./src/http/routes/api/users'),
+    'indexRouter': require('./src/http/routes/api/index'),
+    'queuesRouter': require('./src/http/routes/api/queues'),
+    'nodesRouter': require('./src/http/routes/api/nodes'),
+    'usersRouter': require('./src/http/routes/api/users'),
 };
 
 var Responder = require('./src/core/responder');
@@ -43,13 +43,12 @@ app.use('/api/nodes', apiRoutes['nodesRouter']);
 app.use('/api/users', apiRoutes['usersRouter']);
 
 // catch 404 and send not found response
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
     responder.notFoundResponse(res);
 });
 
-
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
