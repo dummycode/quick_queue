@@ -5,7 +5,13 @@ var router = express.Router();
 
 var { Controller } = require('../../controllers/queues.controller');
 var controller = new Controller();
+
 var { validate } = require('../../controllers/validators/queues.validator');
+
+var {
+    isAuthenticated,
+    isAdministrator
+} = require('../../controllers/middleware/auth.middleware');
 
 /* GET queues */
 router.get('/', controller.getAll);
@@ -17,21 +23,44 @@ router.get('/:queueId', validate('getOne'), controller.getOne);
 router.get('/:queueId/nodes', validate('getOne'), controller.getNodes);
 
 /* POST queue */
-router.post('/', validate('createQueue'), controller.createQueue);
+router.post(
+    '/',
+    [validate('createQueue'), isAuthenticated, isAdministrator],
+    controller.createQueue
+);
 
 /* POST service */
-router.post('/:queueId/service', validate('getOne'), controller.service);
+router.post(
+    '/:queueId/service',
+    [validate('getOne'), isAuthenticated, isAdministrator],
+    controller.service
+);
 
 /* DELETE queue */
-router.delete('/:queueId', validate('deleteQueue'), controller.deleteQueue);
+router.delete(
+    '/:queueId',
+    [validate('deleteQueue'), isAuthenticated, isAdministrator],
+    controller.deleteQueue
+);
 
 /* POST queue */
-router.post('/:queueId/activate', validate('activateQueue'), controller.activateQueue);
+router.post(
+    '/:queueId/activate',
+    [validate('activateQueue'), isAuthenticated, isAdministrator],
+    controller.activateQueue
+);
 
 /* POST queue */
-router.post('/:queueId/deactivate', validate('deactivateQueue'), controller.deactivateQueue);
+router.post(
+    '/:queueId/deactivate',
+    [validate('deactivateQueue'), isAuthenticated, isAdministrator],
+    controller.deactivateQueue);
 
 /* POST queue */
-router.post('/:queueId/clear', validate('clear'), controller.clear);
+router.post(
+    '/:queueId/clear',
+    [validate('clear'), isAuthenticated, isAdministrator],
+    controller.clear
+);
 
 module.exports = router;

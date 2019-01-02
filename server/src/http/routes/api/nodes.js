@@ -7,6 +7,11 @@ var { Controller } = require('../../controllers/nodes.controller');
 var controller = new Controller();
 var { validate } = require('../../controllers/validators/nodes.validator');
 
+var {
+    isAuthenticated,
+    isAdministrator
+} = require('../../controllers/middleware/auth.middleware');
+
 /* GET nodes */
 router.get('/', controller.getAll);
 
@@ -14,13 +19,23 @@ router.get('/', controller.getAll);
 router.get('/:nodeId', validate('getOne'), controller.getOne);
 
 /* POST node */
-router.post('/', validate('createNode'), controller.createNode);
+router.post('/',
+    [validate('createNode'), isAuthenticated],
+    controller.createNode
+);
 
 /* DELETE node */
-router.delete('/:nodeId', validate('deleteNode'), controller.deleteNode);
+router.delete(
+    '/:nodeId',
+    [validate('deleteNode'), isAuthenticated, isAdministrator],
+    controller.deleteNode
+);
 
 /* POST service */
-router.post('/:nodeId/service', validate('service'), controller.service);
+router.post(
+    '/:nodeId/service',
+    [validate('service'), isAuthenticated, isAdministrator],
+    controller.service
+);
 
 module.exports = router;
-
