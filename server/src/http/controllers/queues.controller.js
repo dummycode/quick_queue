@@ -61,8 +61,8 @@ exports.Controller = class Controller {
                 throw new QueueNotFoundError();
             }
             return connection.query(
-                'SELECT * FROM Node WHERE queue_id = ? AND'
-                + ' serviced_at IS NULL AND deleted_at IS NULL',
+                'SELECT * FROM Node WHERE queue_id = ? AND' +
+                ' serviced_at IS NULL AND deleted_at IS NULL',
                 [req.params.queueId]
             );
         }).then((results) => {
