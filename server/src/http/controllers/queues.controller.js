@@ -194,7 +194,7 @@ exports.Controller = class Controller {
             }
             // service the node
             return connection.query(
-                'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP WHERE id = ?',
+                'UPDATE Node SET serviced_at = CURRENT_TIMESTAMP(3) WHERE id = ?',
                 [node.id]
             );
         }).then(() => {
