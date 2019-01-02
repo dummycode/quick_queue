@@ -24,6 +24,7 @@ CREATE TABLE User (
 	`username` VARCHAR(30) NOT NULL,
 	`password` VARCHAR(256) NOT NULL,
 	`email` VARCHAR(256),
+	`is_admin` TININT(1) NOT NULL DEFAULT 0,
 	`created_at` DATETIME(3) NOT NULL,
 	`deleted_at` DATETIME(3),
 	PRIMARY KEY (id)
