@@ -36,11 +36,15 @@ app.use(cors());
 app.use('/', indexRouter);
 
 // api routes
-// TODO: fancy key value thing to clean this up
-app.use('/api/', apiRoutes['indexRouter']);
-app.use('/api/queues', apiRoutes['queuesRouter']);
-app.use('/api/nodes', apiRoutes['nodesRouter']);
-app.use('/api/users', apiRoutes['usersRouter']);
+const api_routes = {
+    '': 'indexRouter',
+    'queues': 'queuesRouter',
+    'nodes': 'nodesRouter',
+    'users': 'usersRouter',
+};
+for (route in api_routes) {
+    app.use(`api/${route}`, apiRoutes[api_routes]);
+}
 
 // catch 404 and send not found response
 app.use(function (req, res, next) {
