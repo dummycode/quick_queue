@@ -1,3 +1,11 @@
 # Quick Queue Server
 
-**About** : NodeJS server that is the black magic behind Quick Queue
+## About
+NodeJS server that is the black magic behind Quick Queue
+
+## Development
+Clone the repository
+Copy `config.json.example` to `config.json` and obtain proper credentials from app developer
+Run `npm install` inside the server folder
+Run `node app.js` to start the server
+

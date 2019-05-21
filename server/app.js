@@ -7,13 +7,6 @@ var expressValidator = require('express-validator');
 
 var indexRouter = require('./src/http/routes/index');
 
-var apiRoutes = {
-    'indexRouter': require('./src/http/routes/api/index'),
-    'queuesRouter': require('./src/http/routes/api/queues'),
-    'nodesRouter': require('./src/http/routes/api/nodes'),
-    'usersRouter': require('./src/http/routes/api/users'),
-};
-
 var Responder = require('./src/core/responder');
 var responder = new Responder();
 
@@ -35,12 +28,16 @@ app.use(cors());
 
 app.use('/', indexRouter);
 
-// api routes
-// TODO: fancy key value thing to clean this up
-app.use('/api/', apiRoutes['indexRouter']);
-app.use('/api/queues', apiRoutes['queuesRouter']);
-app.use('/api/nodes', apiRoutes['nodesRouter']);
-app.use('/api/users', apiRoutes['usersRouter']);
+// API routes
+const apiRoutes = {
+    'index': '',
+    'queues': 'queues',
+    'nodes': 'nodes',
+    'users': 'users',
+};
+for (const [key, route] of Object.entries(apiRoutes)) {
+    app.use(`/api/${route}`, require(`./src/http/routes/api/${key}`));
+}
 
 // catch 404 and send not found response
 app.use(function (req, res, next) {
