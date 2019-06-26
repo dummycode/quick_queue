@@ -1,15 +1,12 @@
 var express = require('express');
 var router = express.Router();
 
+var Responder = require('../../core/responder');
+var responder = new Responder();
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
-    res.render(
-        'index', 
-        { 
-            title: 'Quick Queue', 
-            message: 'Hello there! This is probably not what you are looking for; the api can be found at <a href="/api">/api</a>' 
-        }
-    );
+    responder.successResponse(res, {}, 'Hello there! This is probably not what you are looking for; the API can be found at /api');
 });
 
 module.exports = router;
